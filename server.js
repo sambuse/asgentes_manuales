@@ -9,28 +9,79 @@ app.use(express.static("public"));
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
-let BASE = "";
+let chunks = [];
 
-// Cargar PDFs al iniciar
-async function cargarPDFs() {
-  const archivos = fs.readdirSync("./");
-  for (const archivo of archivos) {
-    if (archivo.endsWith(".pdf")) {
-      console.log("Cargando PDF:", archivo);
-      const buffer = fs.readFileSync(archivo);
-      const data = await pdf(buffer);
-      BASE += "\n" + data.text;
-    }
+// Dividir texto en chunks de ~400 palabras con overlap
+function dividirEnChunks(texto, tamano = 400, overlap = 50) {
+  const palabras = texto.split(/\s+/).filter(Boolean);
+  const result = [];
+
+  for (let i = 0; i < palabras.length; i += tamano - overlap) {
+    const chunk = palabras.slice(i, i + tamano).join(" ");
+    if (chunk.trim().length > 50) result.push(chunk);
+    if (i + tamano >= palabras.length) break;
   }
-  console.log(`PDFs cargados. Caracteres en base: ${BASE.length}`);
+
+  return result;
 }
 
-// Endpoint IA
+// Similitud simple por palabras en común
+function puntaje(query, chunk) {
+  const qWords = new Set(
+    query.toLowerCase()
+      .replace(/[¿?¡!.,;:]/g, "")
+      .split(/\s+/)
+      .filter(w => w.length > 3)
+  );
+  const cWords = chunk.toLowerCase().split(/\s+/);
+  let hits = 0;
+  for (const word of cWords) {
+    if (qWords.has(word)) hits++;
+  }
+  return hits / (qWords.size || 1);
+}
+
+// Buscar los N chunks más relevantes
+function buscarChunks(query, n = 3) {
+  return chunks
+    .map(c => ({ texto: c, score: puntaje(query, c) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
+    .map(c => c.texto);
+}
+
+// Cargar todos los PDFs y chunkear
+async function cargarPDFs() {
+  const archivos = fs.readdirSync("./").filter(f => f.endsWith(".pdf"));
+
+  if (archivos.length === 0) {
+    console.log("⚠️  No se encontraron PDFs.");
+    return;
+  }
+
+  for (const archivo of archivos) {
+    console.log("Cargando:", archivo);
+    const buffer = fs.readFileSync(archivo);
+    const data = await pdf(buffer);
+    const nuevosChunks = dividirEnChunks(data.text);
+    chunks.push(...nuevosChunks);
+    console.log(`  → ${nuevosChunks.length} chunks`);
+  }
+
+  console.log(`✅ Total chunks: ${chunks.length}`);
+}
+
+// Endpoint chat
 app.post("/chat", async (req, res) => {
   const { mensaje } = req.body;
   if (!mensaje) return res.status(400).json({ error: "Mensaje vacío" });
 
-  console.log("Pregunta recibida:", mensaje);
+  console.log("Pregunta:", mensaje);
+
+  const relevantes = buscarChunks(mensaje, 3);
+  const contexto = relevantes.join("\n\n---\n\n");
+
+  console.log(`Chunks usados: ${relevantes.length} (${contexto.length} chars)`);
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -44,16 +95,19 @@ app.post("/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `Eres un asistente experto en manuales de tienda.
-Usa esta información de los manuales para responder:
-${BASE.slice(0, 20000)}`
+            content: `Eres un asistente experto en los procedimientos y manuales de esta tienda.
+Responde de forma clara y ordenada usando SOLO la información de los manuales.
+Si la información no está en los manuales, dilo claramente.
+
+INFORMACIÓN DE LOS MANUALES:
+${contexto}`
           },
           {
             role: "user",
             content: mensaje
           }
         ],
-        temperature: 0.3,
+        temperature: 0.2,
         max_tokens: 1024
       })
     });
@@ -65,9 +119,7 @@ ${BASE.slice(0, 20000)}`
     }
 
     const data = await response.json();
-    const respuesta = data.choices[0].message.content;
-
-    res.json({ respuesta });
+    res.json({ respuesta: data.choices[0].message.content });
 
   } catch (error) {
     console.error("Error:", error.message);
@@ -75,11 +127,12 @@ ${BASE.slice(0, 20000)}`
   }
 });
 
-// Health check para Railway
-app.get("/health", (req, res) => res.json({ status: "ok" }));
+app.get("/health", (req, res) =>
+  res.json({ status: "ok", chunks: chunks.length })
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   await cargarPDFs();
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`Servidor en puerto ${PORT}`);
 });
