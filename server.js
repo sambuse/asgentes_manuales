@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = "mistral-saba-24b"; // Mistral en Groq
+const GROQ_MODEL = "mistral-7b-instruct";
 
 let BASE = "";
 
