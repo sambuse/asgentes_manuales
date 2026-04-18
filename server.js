@@ -46,7 +46,7 @@ app.post("/chat", async (req, res) => {
             role: "system",
             content: `Eres un asistente experto en manuales de tienda.
 Usa esta información de los manuales para responder:
-${BASE.slice(0, 80000)}`
+${BASE.slice(0, 20000)}`
           },
           {
             role: "user",
