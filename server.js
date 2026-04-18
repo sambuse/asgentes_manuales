@@ -73,7 +73,7 @@ app.post("/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `Eres un asistente experto en los procedimientos y manuales de esta tienda llamada Miniso.
+            content: `Eres un asistente experto en los procedimientos y manuales de la tienda llamada "Miniso".
 Responde de forma clara y ordenada usando SOLO la información de los manuales.
 Si la información no está en los manuales, dilo claramente.
 
