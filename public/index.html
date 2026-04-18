@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agente Manuales</title>
+<title>Auditor de Tienda</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-
 <style>
   :root {
     --bg: #0a0a0f;
@@ -13,14 +12,16 @@
     --surface2: #1a1a24;
     --border: #2a2a3a;
     --accent: #00e5a0;
-    --accent-dim: rgba(0, 229, 160, 0.12);
+    --accent2: #6366f1;
     --text: #e8e8f0;
     --text-muted: #6b6b80;
     --user-bg: #1a2a3a;
     --user-border: #2a4a6a;
     --bot-bg: #111820;
     --bot-border: #1a3028;
+    --warn: #f59e0b;
     --danger: #ff4466;
+    --ok: #00e5a0;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,275 +38,310 @@
 
   /* Header */
   header {
-    padding: 14px 20px;
+    padding: 12px 16px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-shrink: 0;
   }
 
   .logo {
-    width: 32px;
-    height: 32px;
+    width: 32px; height: 32px;
     background: var(--accent);
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    font-weight: 600;
-    color: #000;
+    font-size: 14px; font-weight: 600; color: #000;
     flex-shrink: 0;
   }
 
-  .header-info h1 {
-    font-size: 15px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
-
+  .header-info h1 { font-size: 15px; font-weight: 500; }
   .header-info span {
-    font-size: 11px;
-    color: var(--accent);
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.05em;
+    font-size: 10px; color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.08em;
   }
 
   .status-dot {
-    width: 7px;
-    height: 7px;
-    background: var(--accent);
-    border-radius: 50%;
-    margin-left: auto;
-    box-shadow: 0 0 8px var(--accent);
+    width: 7px; height: 7px;
+    background: var(--accent); border-radius: 50%;
+    margin-left: auto; box-shadow: 0 0 8px var(--accent);
     animation: pulse 2s infinite;
   }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
   }
+
+  .tab {
+    flex: 1; padding: 10px;
+    background: none; border: none;
+    color: var(--text-muted); font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Panels */
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
 
   /* Chat */
   #chat {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex: 1; overflow-y: auto;
+    padding: 16px; display: flex;
+    flex-direction: column; gap: 10px;
     scroll-behavior: smooth;
   }
 
-  #chat::-webkit-scrollbar { width: 4px; }
-  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar { width: 3px; }
   #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
   .mensaje {
-    max-width: 85%;
-    padding: 12px 15px;
-    border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.6;
+    max-width: 85%; padding: 11px 14px;
+    border-radius: 12px; font-size: 14px;
+    line-height: 1.6; border: 1px solid transparent;
     animation: fadeUp 0.2s ease;
-    border: 1px solid transparent;
   }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-  .user {
-    background: var(--user-bg);
-    border-color: var(--user-border);
-    align-self: flex-end;
-    border-bottom-right-radius: 3px;
-  }
+  .user { background: var(--user-bg); border-color: var(--user-border); align-self: flex-end; border-bottom-right-radius: 3px; }
+  .bot { background: var(--bot-bg); border-color: var(--bot-border); align-self: flex-start; border-bottom-left-radius: 3px; position: relative; }
+  .bot::before { content:'IA'; position:absolute; top:-8px; left:10px; font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--accent); background:var(--bg); padding:0 4px; letter-spacing:.1em; }
 
-  .bot {
-    background: var(--bot-bg);
-    border-color: var(--bot-border);
-    align-self: flex-start;
-    border-bottom-left-radius: 3px;
-    position: relative;
-  }
+  .typing { display:flex; gap:5px; padding:14px 16px; align-items:center; }
+  .typing span { width:6px;height:6px;background:var(--accent);border-radius:50%;animation:bounce 1.2s infinite;opacity:.6; }
+  .typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px);opacity:1}}
 
-  .bot::before {
-    content: 'IA';
-    position: absolute;
-    top: -8px;
-    left: 10px;
-    font-size: 9px;
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--accent);
-    background: var(--bg);
-    padding: 0 4px;
-    letter-spacing: 0.1em;
-  }
+  .empty-state { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-muted);text-align:center;padding:40px; }
+  .empty-icon { font-size:32px;opacity:.5;margin-bottom:4px; }
+  .empty-state p { font-size:13px;line-height:1.6; }
 
-  .typing {
-    display: flex;
-    gap: 5px;
-    padding: 14px 16px;
-    align-items: center;
-  }
-
-  .typing span {
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: bounce 1.2s infinite;
-    opacity: 0.6;
-  }
-
-  .typing span:nth-child(2) { animation-delay: 0.2s; }
-  .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes bounce {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-5px); opacity: 1; }
-  }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 40px;
-  }
-
-  .empty-icon {
-    font-size: 36px;
-    margin-bottom: 6px;
-    opacity: 0.5;
-  }
-
-  .empty-state p { font-size: 13px; line-height: 1.6; }
-
-  /* Input */
+  /* Input chat */
   #inputArea {
-    padding: 12px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    flex-shrink: 0;
+    padding: 10px 14px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
   }
 
-  #input {
-    flex: 1;
+  textarea {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 13px; color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 14px;
+    outline: none; resize: none; max-height: 100px; min-height: 42px;
+    line-height: 1.5; transition: border-color 0.2s;
+  }
+  textarea::placeholder { color: var(--text-muted); }
+  textarea:focus { border-color: var(--accent); }
+
+  .send-btn {
+    width: 42px; height: 42px; background: var(--accent);
+    border: none; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: opacity .2s, transform .1s;
+  }
+  .send-btn:active { transform: scale(0.93); }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .send-btn svg { width:17px;height:17px; }
+
+  /* Panel auditor */
+  #auditorPanel {
+    flex: 1; overflow-y: auto;
+    padding: 16px; display: flex; flex-direction: column; gap: 14px;
+  }
+
+  .cam-area {
     background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 14px;
-    color: var(--text);
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    min-height: 220px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .cam-area:hover { border-color: var(--accent); }
+
+  .cam-placeholder {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    color: var(--text-muted); text-align: center; padding: 20px;
+  }
+  .cam-placeholder span { font-size: 36px; }
+  .cam-placeholder p { font-size: 13px; line-height: 1.5; }
+
+  #preview {
+    width: 100%; max-height: 300px;
+    object-fit: cover; display: none; border-radius: 12px;
+  }
+
+  #fileInput { display: none; }
+
+  .cam-btns { display: flex; gap: 8px; }
+
+  .btn {
+    flex: 1; padding: 11px;
+    border: none; border-radius: 10px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    outline: none;
-    resize: none;
-    max-height: 120px;
-    min-height: 44px;
-    line-height: 1.5;
-    transition: border-color 0.2s;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: opacity .2s, transform .1s;
   }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-cam { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .btn-audit { background: var(--accent); color: #000; }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); font-size: 12px; }
 
-  #input::placeholder { color: var(--text-muted); }
-  #input:focus { border-color: var(--accent); }
-
-  #sendBtn {
-    width: 44px;
-    height: 44px;
-    background: var(--accent);
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: opacity 0.2s, transform 0.1s;
-  }
-
-  #sendBtn:active { transform: scale(0.93); }
-  #sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  #sendBtn svg { width: 18px; height: 18px; }
-
-  .error {
-    border-color: var(--danger) !important;
-    color: var(--danger);
+  /* Resultado auditoría */
+  .resultado {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
     font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    animation: fadeUp 0.3s ease;
   }
+
+  .resultado.ok { border-color: var(--ok); }
+  .resultado.warn { border-color: var(--warn); }
+  .resultado.bad { border-color: var(--danger); }
+
+  .sector-badge {
+    display: inline-block;
+    background: var(--accent2);
+    color: white;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  .loading-audit {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+    padding: 30px; color: var(--text-muted);
+    font-size: 13px; text-align: center;
+  }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg { color: var(--danger); font-size: 13px; text-align: center; padding: 12px; }
 </style>
 </head>
-
 <body>
 
 <header>
   <div class="logo">M</div>
   <div class="header-info">
-    <h1>Agente Manuales</h1>
-    <span>MISTRAL · GROQ</span>
+    <h1>Auditor de Tienda</h1>
+    <span>LLAMA 4 · VISIÓN IA</span>
   </div>
   <div class="status-dot"></div>
 </header>
 
-<div id="chat">
-  <div class="empty-state" id="emptyState">
-    <div class="empty-icon">📋</div>
-    <p>Hacé tus preguntas sobre<br>los manuales de la tienda</p>
+<div class="tabs">
+  <button class="tab active" onclick="cambiarTab('chat')">💬 Consultas</button>
+  <button class="tab" onclick="cambiarTab('auditor')">📸 Auditoría Visual</button>
+</div>
+
+<!-- Panel Chat -->
+<div class="panel active" id="chatPanel">
+  <div id="chat">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">📋</div>
+      <p>Preguntá sobre los manuales<br>y procedimientos de la tienda</p>
+    </div>
+  </div>
+  <div id="inputArea">
+    <textarea id="input" placeholder="Escribe tu pregunta..." rows="1"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="enviar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
   </div>
 </div>
 
-<div id="inputArea">
-  <textarea
-    id="input"
-    placeholder="Escribe tu pregunta..."
-    rows="1"
-  ></textarea>
-  <button id="sendBtn" onclick="enviar()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="22" y1="2" x2="11" y2="13"/>
-      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-    </svg>
-  </button>
+<!-- Panel Auditor Visual -->
+<div class="panel" id="auditorPanel">
+
+  <div class="cam-area" id="camArea" onclick="document.getElementById('fileInput').click()">
+    <div class="cam-placeholder" id="camPlaceholder">
+      <span>📷</span>
+      <p>Tocá para sacar o subir<br>una foto del sector</p>
+    </div>
+    <img id="preview" alt="Vista previa"/>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="mostrarPreview(event)"/>
+
+  <div class="cam-btns">
+    <button class="btn btn-cam" onclick="document.getElementById('fileInput').click()">
+      📷 Foto
+    </button>
+    <button class="btn btn-audit" id="auditBtn" onclick="auditar()" disabled>
+      🔍 Auditar sector
+    </button>
+  </div>
+
+  <div id="auditResult"></div>
+
 </div>
 
 <script>
+  // ── Tabs ──
+  function cambiarTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'chat') || (i === 1 && tab === 'auditor'));
+    });
+    document.getElementById('chatPanel').classList.toggle('active', tab === 'chat');
+    document.getElementById('auditorPanel').classList.toggle('active', tab === 'auditor');
+  }
+
+  // ── Chat ──
   const chat = document.getElementById("chat");
   const input = document.getElementById("input");
   const sendBtn = document.getElementById("sendBtn");
-  const emptyState = document.getElementById("emptyState");
-  let loading = false;
+  let chatLoading = false;
 
-  // Auto-resize textarea
   input.addEventListener("input", () => {
     input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+    input.style.height = Math.min(input.scrollHeight, 100) + "px";
   });
 
-  // Enter para enviar (Shift+Enter = nueva línea)
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      enviar();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); }
   });
 
   function agregarMensaje(texto, tipo) {
-    if (emptyState) emptyState.remove();
-
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
     const div = document.createElement("div");
     div.className = "mensaje " + tipo;
     div.innerText = texto;
@@ -316,8 +352,7 @@
 
   function mostrarTyping() {
     const div = document.createElement("div");
-    div.className = "mensaje bot typing";
-    div.id = "typing";
+    div.className = "mensaje bot typing"; div.id = "typing";
     div.innerHTML = "<span></span><span></span><span></span>";
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
@@ -330,13 +365,9 @@
 
   async function enviar() {
     const mensaje = input.value.trim();
-    if (!mensaje || loading) return;
-
-    loading = true;
-    sendBtn.disabled = true;
-    input.value = "";
-    input.style.height = "auto";
-
+    if (!mensaje || chatLoading) return;
+    chatLoading = true; sendBtn.disabled = true;
+    input.value = ""; input.style.height = "auto";
     agregarMensaje(mensaje, "user");
     mostrarTyping();
 
@@ -346,23 +377,93 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mensaje })
       });
-
       quitarTyping();
-
-      if (!res.ok) throw new Error("Error del servidor");
-
+      if (!res.ok) throw new Error();
       const data = await res.json();
       agregarMensaje(data.respuesta, "bot");
-
-    } catch (err) {
+    } catch {
       quitarTyping();
-      const errDiv = agregarMensaje("Error al conectar. Intenta de nuevo.", "bot");
-      errDiv.classList.add("error");
+      const e = agregarMensaje("Error al conectar. Intenta de nuevo.", "bot");
+      e.style.color = "var(--danger)";
     }
 
-    loading = false;
-    sendBtn.disabled = false;
-    input.focus();
+    chatLoading = false; sendBtn.disabled = false; input.focus();
+  }
+
+  // ── Auditor visual ──
+  let imagenBase64 = null;
+
+  function mostrarPreview(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const full = e.target.result;
+      imagenBase64 = full.split(",")[1]; // solo base64
+
+      const preview = document.getElementById("preview");
+      preview.src = full;
+      preview.style.display = "block";
+      document.getElementById("camPlaceholder").style.display = "none";
+      document.getElementById("auditBtn").disabled = false;
+      document.getElementById("auditResult").innerHTML = "";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function auditar() {
+    if (!imagenBase64) return;
+
+    const auditResult = document.getElementById("auditResult");
+    const auditBtn = document.getElementById("auditBtn");
+
+    auditBtn.disabled = true;
+    auditResult.innerHTML = `
+      <div class="loading-audit">
+        <div class="spinner"></div>
+        <p>Detectando sector y comparando<br>con los manuales...</p>
+      </div>
+    `;
+
+    try {
+      const res = await fetch("/auditar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imagen: imagenBase64 })
+      });
+
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+
+      // Determinar clase según veredicto
+      let clase = "warn";
+      if (data.auditoria.includes("✅")) clase = "ok";
+      else if (data.auditoria.includes("❌")) clase = "bad";
+
+      auditResult.innerHTML = `
+        <div class="resultado ${clase}">
+          <div class="sector-badge">📍 ${data.sector.toUpperCase()}</div>
+          ${data.auditoria}
+        </div>
+        <button class="btn btn-secondary" onclick="resetAuditor()">🔄 Nueva foto</button>
+      `;
+
+    } catch {
+      auditResult.innerHTML = `<p class="error-msg">Error al auditar. Intentá de nuevo.</p>`;
+    }
+
+    auditBtn.disabled = false;
+  }
+
+  function resetAuditor() {
+    imagenBase64 = null;
+    document.getElementById("preview").style.display = "none";
+    document.getElementById("preview").src = "";
+    document.getElementById("camPlaceholder").style.display = "flex";
+    document.getElementById("auditBtn").disabled = true;
+    document.getElementById("auditResult").innerHTML = "";
+    document.getElementById("fileInput").value = "";
   }
 </script>
 
